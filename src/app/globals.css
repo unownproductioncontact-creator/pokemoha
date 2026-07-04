@@ -1,26 +1,92 @@
 @import "tailwindcss";
 
+/* Mode sombre piloté par la classe .dark (toggle), pas prefers-color-scheme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ───────────── Tokens sémantiques (clair par défaut) ───────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --canvas: #fafafb;
+  --surface: #ffffff;
+  --elevated: #f3f3f6;
+  --line: #e7e7ec;
+  --ink: #17171c;
+  --muted: #6b6b78;
+  --brand: #6d5cff;
+  --brand-ink: #ffffff;
+  --accent: #e08600;
+  --success: #0ea371;
+  --warning: #d98200;
+  --danger: #e0443e;
+  --info: #2f74e0;
 }
 
+.dark {
+  --canvas: #09090d;
+  --surface: #131319;
+  --elevated: #1b1b24;
+  --line: #272730;
+  --ink: #ededf2;
+  --muted: #9a9aa8;
+  --brand: #8b7bff;
+  --brand-ink: #0a0a0f;
+  --accent: #fbbf24;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #60a5fa;
+}
+
+/* ───────────── Mapping Tailwind (utilitaires bg-surface, text-muted…) ───────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    border-color: var(--line);
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--brand) 28%, transparent);
+  }
+  /* Scrollbars discrètes */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 9999px;
+  }
 }

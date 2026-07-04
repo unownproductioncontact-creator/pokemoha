@@ -1,0 +1,38 @@
+# Blueprint Render (pattern masterball-dashboard) — plan FREE.
+# Persistance : disque éphémère → renseigne DATABASE_URL (Postgres Neon gratuit,
+# https://neon.tech) pour que cache + tokens OAuth + concurrents survivent aux
+# redéploiements. Anti cold-start : /healthz pingé par UptimeRobot (~5 min)
+# et/ou le workflow GitHub Actions .github/workflows/keepalive.yml.
+
+services:
+  - type: web
+    name: pokemoha
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    healthCheckPath: /healthz
+    autoDeploy: true
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    envVars:
+      # Secrets — à saisir dans le dashboard Render (jamais dans le dépôt).
+      - key: YOUTUBE_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DASHBOARD_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      # Constantes non secrètes.
+      - key: KIIBIKI_USE_LLM_IDEAS
+        value: "0"
+      - key: KIIBIKI_IDEAS_MODEL
+        value: claude-sonnet-4-6
