@@ -4,7 +4,24 @@
 
 import { listTokens } from "./oauthStore";
 import { getValidAccessToken } from "./googleOAuth";
-import type { CtrReport } from "./types";
+import { getRealCtr, type CtrOutcome } from "./reportingService";
+import type { CtrReport, LabeledMetric } from "./types";
+
+/** Traduit le résultat Reporting en métrique étiquetée pour l'UI (§0). */
+function mapCtr(o: CtrOutcome): LabeledMetric {
+  if (o.status === "real") {
+    return {
+      status: "real",
+      value: o.ctr, // fraction 0..1 (formatPercent × 100 à l'affichage)
+      unit: "%",
+      source: `YouTube Reporting (${o.days} j, ${o.impressions.toLocaleString(
+        "fr-FR",
+      )} impressions)`,
+    };
+  }
+  // pending / unavailable → jamais de valeur inventée, juste une note claire.
+  return { status: "unavailable", note: o.note };
+}
 
 const DAY = 86_400_000;
 function ymd(ms: number): string {
@@ -53,13 +70,15 @@ export async function getCtrReport(
   try {
     const at = await getValidAccessToken(tok.channelId);
     if (!at) return unavailable;
-    const a = await fetchAnalytics(at);
+    // CTR (Reporting API) et rétention (Analytics API) en parallèle.
+    // getRealCtr ne lève jamais → un échec CTR ne casse pas la rétention.
+    const [a, ctrOutcome] = await Promise.all([
+      fetchAnalytics(at),
+      getRealCtr(at, tok.channelId),
+    ]);
     return {
       status: "ok",
-      ctr: {
-        status: "unavailable",
-        note: "Le CTR (impressions → clics) requiert le rapport Reporting API channel_reach_basic_a1. La rétention vient de l'API Analytics.",
-      },
+      ctr: mapCtr(ctrOutcome),
       retention: {
         status: "real",
         value: a.avgViewPct != null ? a.avgViewPct / 100 : undefined,
