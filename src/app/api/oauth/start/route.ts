@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { buildConsentUrl } from "@/lib/oauthUrl";
 import { hasOAuthConfig, env } from "@/lib/env";
+import { publicOrigin } from "@/lib/publicUrl";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const origin = req.nextUrl.origin;
+  const origin = publicOrigin(req);
 
   if (!hasOAuthConfig()) {
     // Pas de JSON brut : on renvoie vers Paramètres avec un message lisible.

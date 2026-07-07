@@ -3,6 +3,7 @@ import { exchangeCodeForToken } from "@/lib/googleOAuth";
 import { getMyChannels } from "@/lib/youtube";
 import { saveToken } from "@/lib/oauthStore";
 import { OAUTH_SCOPES } from "@/lib/oauthUrl";
+import { publicOrigin } from "@/lib/publicUrl";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,8 @@ function back(origin: string, params: Record<string, string>): NextResponse {
 }
 
 export async function GET(req: NextRequest) {
-  const { searchParams, origin } = req.nextUrl;
+  const { searchParams } = req.nextUrl;
+  const origin = publicOrigin(req);
 
   const oauthError = searchParams.get("error");
   if (oauthError) return back(origin, { oauth: "error", reason: oauthError });
