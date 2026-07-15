@@ -11,6 +11,7 @@ import type {
   AuditResult,
   CtrReport,
   IdeasResult,
+  TitlePatternsResult,
   AlertsResult,
   DiagnosticResult,
   HistoryResult,
@@ -324,6 +325,29 @@ export function useIdeas(demo?: boolean, daily?: boolean) {
       alive = false;
     };
   }, [demo, daily]);
+  return state;
+}
+
+/** Modèles de titres appris de mes outliers + concurrents (/api/title-patterns). */
+export function useTitlePatterns(demo?: boolean) {
+  const [state, setState] = useState<AsyncState<TitlePatternsResult>>({
+    loading: true,
+  });
+  useEffect(() => {
+    let alive = true;
+    setState({ loading: true });
+    fetch("/api/title-patterns" + (demo ? "?demo=1" : ""))
+      .then((r) => r.json())
+      .then((d: TitlePatternsResult) => {
+        if (alive) setState({ loading: false, data: d });
+      })
+      .catch((e) => {
+        if (alive) setState({ loading: false, error: String(e) });
+      });
+    return () => {
+      alive = false;
+    };
+  }, [demo]);
   return state;
 }
 

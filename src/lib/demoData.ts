@@ -22,6 +22,7 @@ import type {
   AuditResult,
   ThumbResult,
   IdeasResult,
+  TitlePatternsResult,
   YtVideo,
 } from "./types";
 
@@ -418,5 +419,54 @@ export function buildDemoAlerts(): AlertsResult {
       competitorOutliers,
       nowMs: now,
     }),
+  };
+}
+
+export function buildDemoTitlePatterns(): TitlePatternsResult {
+  return {
+    demo: true,
+    status: "ok",
+    patterns: [
+      {
+        template: "J'ai ouvert un display {X} en entier",
+        source: "mine",
+        sourceLabel: "Ta chaîne",
+        strength: 4.1,
+        isShort: false,
+        original: "J'ai ouvert un display Écarlate & Violet 151 en entier",
+      },
+      {
+        template: "POURQUOI {X} explose en ce moment",
+        source: "competitor",
+        sourceLabel: "Pokémoniteur",
+        strength: 3.3,
+        isShort: false,
+        original: "POURQUOI Dracaufeu explose en ce moment",
+      },
+      {
+        template: "{X} : mon plus gros pull de l'année",
+        source: "mine",
+        sourceLabel: "Ta chaîne",
+        strength: 2.8,
+        isShort: true,
+        original: "Prismatic Evolutions : mon plus gros pull de l'année",
+      },
+      {
+        template: "J'ai dépensé 1000 € en {X}",
+        source: "competitor",
+        sourceLabel: "Ilan du Bourg",
+        strength: 2.4,
+        isShort: false,
+        original: "J'ai dépensé 1000 € en boosters Pokémon",
+      },
+      {
+        template: "Personne ne fait ça avec {X}",
+        source: "competitor",
+        sourceLabel: "Palette",
+        strength: 1.9,
+        isShort: true,
+        original: "Personne ne fait ça avec les displays scellés",
+      },
+    ],
   };
 }

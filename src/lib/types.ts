@@ -273,6 +273,27 @@ export interface IdeasResult {
   ideas: Idea[];
 }
 
+/** Modèle de titre APPRIS d'un vrai titre outlier (le mien ou d'un concurrent).
+ *  `template` contient le marqueur `{X}` où s'insère le sujet de l'utilisateur. */
+export interface TitlePattern {
+  template: string;
+  source: "mine" | "competitor";
+  /** Provenance lisible : « Ta chaîne » ou le nom du concurrent. */
+  sourceLabel: string;
+  /** Preuve : ratio vues ÷ médiane du même format sur SA chaîne (× la normale). */
+  strength: number;
+  isShort: boolean;
+  /** Titre réel d'origine (affiché comme preuve « d'après … »). */
+  original: string;
+}
+
+export interface TitlePatternsResult {
+  demo?: boolean;
+  status: "ok" | "no-credentials" | "error";
+  message?: string;
+  patterns: TitlePattern[];
+}
+
 // ───────────────────────── Système : alertes / historique / diagnostic ─────────────────────────
 
 export interface AlertsResult {
