@@ -198,7 +198,7 @@ export default function ConcurrentsPage() {
       ) : !data?.hasCredentials && !demo ? (
         <CredentialsNotice
           message="Ajoute YOUTUBE_API_KEY pour analyser tes concurrents."
-          onDemo={() => setDemo(true)}
+         
         />
       ) : (
         <>

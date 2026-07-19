@@ -34,7 +34,7 @@ function ScoreLine({
   );
 }
 
-export function IdeaCard({ idea }: { idea: Idea }) {
+export function IdeaCard({ idea, demo }: { idea: Idea; demo?: boolean }) {
   return (
     <Card className="flex flex-col p-4">
       <div className="flex items-start justify-between gap-2">
@@ -43,7 +43,8 @@ export function IdeaCard({ idea }: { idea: Idea }) {
           {idea.sourceLabel}
         </Badge>
       </div>
-      <p className="mt-1 text-sm text-muted">{idea.angle}</p>
+      {/* Angle affiché seulement s'il apporte une info (audit UX F020). */}
+      {idea.angle && <p className="mt-1 text-sm text-muted">{idea.angle}</p>}
       <p className="mt-1 text-xs text-muted">{idea.why}</p>
       <div className="mt-3 grid grid-cols-2 gap-3">
         <ScoreLine
@@ -54,7 +55,7 @@ export function IdeaCard({ idea }: { idea: Idea }) {
         <ScoreLine label="Qualité" value={idea.quality} tone="var(--brand)" />
       </div>
       <a
-        href={`/generateur-titres?idee=${encodeURIComponent(idea.title)}`}
+        href={`/generateur-titres?idee=${encodeURIComponent(idea.title)}${demo ? "&demo=1" : ""}`}
         className="mt-3 self-start text-sm font-medium text-brand hover:underline"
       >
         Générer des titres →

@@ -109,8 +109,8 @@ export default function ParametresPage() {
             requêtes)
           </p>
           <p className="mt-1 text-sm">
-            {COMPETITORS.length} concurrents seedés — modifiables dans l&apos;onglet
-            Concurrents.
+            {COMPETITORS.length} concurrents pré-remplis — modifiables dans
+            l&apos;onglet Concurrents.
           </p>
           <p className="mt-2 text-xs text-muted">
             Édite <span className="font-mono">src/config/</span> pour personnaliser.

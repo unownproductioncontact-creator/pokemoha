@@ -1,5 +1,5 @@
 import type { OutlierFlag, Confidence } from "@/lib/types";
-import { Badge, type Tone } from "@/components/ui";
+import { Badge, DataBadge, type Tone } from "@/components/ui";
 import { formatRatio } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -50,14 +50,28 @@ export function RatioPill({
   flag: OutlierFlag;
   projected?: number;
 }) {
+  // « Démarrage fort » (audit UX F019) : le chiffre qui justifie la décision est
+  // la PROJECTION à maturité — mise en avant (étiquetée Estimé, §0). Le ratio
+  // actuel, souvent bas car la vidéo est jeune, passe en secondaire.
+  const emerging = flag === "emerging" && projected != null;
   return (
     <div className="shrink-0 text-right">
-      <div className={cn("text-lg font-bold tabular-nums", RATIO_COLOR[flag])}>
-        {formatRatio(ratio)}
+      <div
+        className={cn(
+          "text-lg font-bold tabular-nums",
+          emerging ? "text-success" : RATIO_COLOR[flag],
+        )}
+      >
+        {emerging ? `proj. ${formatRatio(projected)}` : formatRatio(ratio)}
       </div>
-      {flag === "emerging" && projected ? (
-        <div className="text-[10px] text-muted">proj. {formatRatio(projected)}</div>
-      ) : null}
+      {emerging && (
+        <>
+          <DataBadge status="estimated" />
+          <div className="mt-0.5 text-[10px] tabular-nums text-muted">
+            actuel {formatRatio(ratio)}
+          </div>
+        </>
+      )}
     </div>
   );
 }

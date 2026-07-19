@@ -58,7 +58,7 @@ export default function HooksPage() {
     return (
       <>
         {header}
-        <CredentialsNotice message={data.message} onDemo={() => setDemo(true)} />
+        <CredentialsNotice message={data.message} />
       </>
     );
   if (data.status === "error")
@@ -85,18 +85,32 @@ export default function HooksPage() {
         </EmptyState>
       ) : (
         <div className="space-y-2">
-          {patterns.map((p) => (
+          {patterns.map((p) => {
+            // Plancher d'échantillon (audit UX F046) : un lift calculé sur < 3
+            // titres n'est pas une preuve → couleur neutre + mention.
+            const weak = p.count < 3;
+            return (
             <Card key={p.id} className="p-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium">{p.label}</span>
                 <Badge
-                  tone={p.lift >= 1.2 ? "success" : p.lift >= 0.95 ? "muted" : "danger"}
+                  tone={
+                    weak
+                      ? "muted"
+                      : p.lift >= 1.2
+                        ? "success"
+                        : p.lift >= 0.95
+                          ? "muted"
+                          : "danger"
+                  }
                 >
                   {p.lift === Infinity ? "lift ∞" : `lift ${formatRatio(p.lift)}`}
+                  {weak ? " · échantillon faible" : ""}
                 </Badge>
               </div>
               <div className="mt-1 text-xs text-muted">
-                {p.count} titres ({Math.round(p.share * 100)}%) · ratio moyen{" "}
+                {p.count} titre{p.count > 1 ? "s" : ""} (
+                {Math.round(p.share * 100)}%) · ratio moyen{" "}
                 {formatRatio(p.avgRatioWith)} avec / {formatRatio(p.avgRatioWithout)}{" "}
                 sans
               </div>
@@ -106,7 +120,8 @@ export default function HooksPage() {
                 </div>
               )}
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

@@ -79,13 +79,20 @@ function adaptTitle(s: IdeaSignal): string {
   const core = keywords(s.title).slice(0, 3).join(" ") || s.title.trim();
   if (s.mechanic && MECH_TEMPLATE[s.mechanic.id])
     return MECH_TEMPLATE[s.mechanic.id](core);
-  return `${cap(core)} — l'angle qui cartonne en ce moment`;
+  // Audit UX F020 : pas de suffixe boilerplate dupliqué sur chaque carte —
+  // le sujet propre suffit, le « pourquoi » porte déjà la preuve. Mais si le
+  // noyau se réduit à un seul mot (signal dégénéré), on garde le titre d'origine
+  // nettoyé plutôt qu'un titre à un mot inutilisable comme graine de génération.
+  if (core.includes(" ")) return cap(core);
+  const full = s.title.trim();
+  return cap(full.length >= core.length ? full : core);
 }
 
 function angleFor(s: IdeaSignal): string {
   if (s.mechanic)
     return `Mécanique « ${s.mechanic.label} » adaptée en FR (jamais une copie).`;
-  return "Reprends le concept en l'adaptant à ta voix et ta niche.";
+  // Générique identique partout = bruit (audit UX F020) → vide, masqué par l'UI.
+  return "";
 }
 
 function whyFor(s: IdeaSignal): string {

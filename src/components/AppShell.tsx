@@ -101,9 +101,11 @@ function ChannelSwitcher() {
 
 function SidebarContent({
   pathname,
+  demo,
   onNavigate,
 }: {
   pathname: string;
+  demo: boolean;
   onNavigate?: () => void;
 }) {
   const Logo = ICONS.logo;
@@ -136,7 +138,7 @@ function SidebarContent({
                 return (
                   <li key={item.href}>
                     <Link
-                      href={item.href}
+                      href={demo ? `${item.href}?demo=1` : item.href}
                       onClick={onNavigate}
                       aria-current={active ? "page" : undefined}
                       className={cn(
@@ -178,10 +180,14 @@ function SidebarContent({
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [drawer, setDrawer] = useState(false);
+  // Mode démo actif ? → propagé aux liens de navigation (audit UX F003), sinon
+  // la démo se perd au 1er clic et chaque écran affiche « Connecte une source ».
+  const [demo, setDemo] = useState(false);
 
-  // Ferme le drawer à chaque navigation.
+  // Ferme le drawer à chaque navigation + resynchronise l'état démo avec l'URL.
   useEffect(() => {
     setDrawer(false);
+    setDemo(new URLSearchParams(window.location.search).get("demo") === "1");
   }, [pathname]);
 
   const Menu = ICONS.menu;
@@ -192,7 +198,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen">
       {/* Sidebar desktop */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-surface lg:flex">
-        <SidebarContent pathname={pathname} />
+        <SidebarContent pathname={pathname} demo={demo} />
       </aside>
 
       {/* Drawer mobile */}
@@ -214,6 +220,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
             <SidebarContent
               pathname={pathname}
+              demo={demo}
               onNavigate={() => setDrawer(false)}
             />
           </aside>

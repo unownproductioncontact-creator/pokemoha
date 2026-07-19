@@ -70,11 +70,11 @@ export function FilterBar({
         value={window}
         onChange={(e) => onWindow(Number(e.target.value) as DateWindowDays)}
         className={SELECT_CLASS}
-        aria-label="Fenêtre de dates"
+        aria-label="Période"
       >
         {DATE_WINDOWS.map((w) => (
           <option key={w.value} value={w.value}>
-            {w.label}
+            Période : {w.label}
           </option>
         ))}
       </select>

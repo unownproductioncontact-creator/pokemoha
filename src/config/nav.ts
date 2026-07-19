@@ -17,11 +17,15 @@ export const NAV: NavGroup[] = [
     id: "analyse",
     label: "Analyse",
     items: [
+      // Libellés : le mot de PORTÉE d'abord (mes vidéos / ma niche / monde /
+      // concurrents) — audit UX F001, l'utilisateur ne doit plus interpréter.
       { href: "/", label: "Dashboard", icon: "grid" },
       { href: "/alertes", label: "Alertes", icon: "bell" },
-      { href: "/outliers", label: "Outliers", icon: "flame" },
-      { href: "/outliers-youtube", label: "Outliers YouTube", icon: "youtube" },
-      { href: "/outliers-monde", label: "Outliers du monde", icon: "globe" },
+      { href: "/outliers", label: "Mes outliers", icon: "flame" },
+      { href: "/outliers-youtube", label: "Outliers de ma niche", icon: "youtube" },
+      { href: "/outliers-monde", label: "Outliers monde", icon: "globe" },
+      { href: "/concurrents", label: "Concurrents", icon: "users" },
+      { href: "/outliers-concurrents", label: "Outliers concurrents", icon: "target" },
       { href: "/tendances", label: "Tendances", icon: "trend" },
       { href: "/recherche", label: "Recherche", icon: "search" },
     ],
@@ -41,8 +45,6 @@ export const NAV: NavGroup[] = [
     id: "creer",
     label: "Créer",
     items: [
-      { href: "/concurrents", label: "Concurrents", icon: "users" },
-      { href: "/outliers-concurrents", label: "Outliers concurrents", icon: "target" },
       { href: "/idees-shorts", label: "Idées Virales Shorts", icon: "short" },
       { href: "/idees-jour", label: "Idées du jour", icon: "bulb" },
       { href: "/idees-top100", label: "Idées · Top 100", icon: "list" },

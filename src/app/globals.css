@@ -13,11 +13,12 @@
   --muted: #6b6b78;
   --brand: #6d5cff;
   --brand-ink: #ffffff;
-  --accent: #e08600;
-  --success: #0ea371;
-  --warning: #d98200;
-  --danger: #e0443e;
-  --info: #2f74e0;
+  /* Sémantiques assombris pour ≥ 4,5:1 (WCAG AA) sur surface claire. */
+  --accent: #a86300;
+  --success: #0b7f58;
+  --warning: #9c5c00;
+  --danger: #c93a34;
+  --info: #2563c7;
 }
 
 .dark {

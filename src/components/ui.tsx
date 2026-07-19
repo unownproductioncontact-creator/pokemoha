@@ -57,6 +57,15 @@ const TONE_CLASS: Record<Tone, string> = {
   muted: "bg-elevated text-muted",
 };
 
+export type Severity = "high" | "medium" | "low";
+
+/** Sévérité → libellé FR + ton, partagé Alertes/Audit (audit UX F024). */
+export const SEVERITY_META: Record<Severity, { label: string; tone: Tone }> = {
+  high: { label: "Urgent", tone: "danger" },
+  medium: { label: "À surveiller", tone: "warning" },
+  low: { label: "Info", tone: "muted" },
+};
+
 export function Badge({
   tone = "muted",
   children,

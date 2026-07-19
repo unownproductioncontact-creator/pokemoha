@@ -28,7 +28,7 @@ export function ScanPage({
     if (new URLSearchParams(window.location.search).get("demo") === "1")
       setDemo(true);
   }, []);
-  const { loading, data } = useScan(kind, demo);
+  const { loading, data, reload } = useScan(kind, demo);
 
   const header = (
     <PageHeader
@@ -49,21 +49,21 @@ export function ScanPage({
     return (
       <>
         {header}
-        <ErrorBlock />
+        <ErrorBlock onRetry={reload} />
       </>
     );
   if (data.status === "no-credentials")
     return (
       <>
         {header}
-        <CredentialsNotice message={data.message} onDemo={() => setDemo(true)} />
+        <CredentialsNotice message={data.message} />
       </>
     );
   if (data.status === "error")
     return (
       <>
         {header}
-        <ErrorBlock message={data.message} />
+        <ErrorBlock message={data.message} onRetry={reload} />
       </>
     );
 

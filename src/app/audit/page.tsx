@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAudit } from "@/components/dataHooks";
-import { PageHeader, Card, Badge, DataBadge } from "@/components/ui";
+import { PageHeader, Card, Badge, DataBadge, SEVERITY_META } from "@/components/ui";
 import {
   CredentialsNotice,
   LoadingBlock,
@@ -11,7 +11,6 @@ import {
 } from "@/components/StateBlock";
 import { formatCompact, formatRatio } from "@/lib/format";
 import type { AuditScore, AuditRec } from "@/lib/auditCore";
-import type { Tone } from "@/components/ui";
 
 const SUBTITLE =
   "Diagnostic complet : scores, tranche de durée gagnante, meilleur jour, recommandations preuve + impact + action.";
@@ -51,18 +50,14 @@ function ScoreCard({ s }: { s: AuditScore }) {
   );
 }
 
-const SEV_TONE: Record<AuditRec["severity"], Tone> = {
-  high: "danger",
-  medium: "warning",
-  low: "muted",
-};
-
 function RecCard({ rec }: { rec: AuditRec }) {
   return (
     <Card className="p-4">
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-medium">{rec.title}</h3>
-        <Badge tone={SEV_TONE[rec.severity]}>{rec.severity}</Badge>
+        <Badge tone={SEVERITY_META[rec.severity].tone}>
+          {SEVERITY_META[rec.severity].label}
+        </Badge>
       </div>
       <dl className="mt-2 space-y-1 text-sm">
         <div className="flex gap-2">
@@ -116,7 +111,7 @@ export default function AuditPage() {
     return (
       <>
         {header}
-        <CredentialsNotice message={data.message} onDemo={() => setDemo(true)} />
+        <CredentialsNotice message={data.message} />
       </>
     );
   if (data.status === "error" || !data.report)

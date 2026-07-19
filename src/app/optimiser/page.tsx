@@ -68,7 +68,7 @@ export default function OptimiserPage() {
     return (
       <>
         {header}
-        <CredentialsNotice message={data.message} onDemo={() => setDemo(true)} />
+        <CredentialsNotice message={data.message} />
       </>
     );
   if (data.status === "error")

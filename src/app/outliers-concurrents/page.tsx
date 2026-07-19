@@ -9,13 +9,16 @@ import {
   LoadingBlock,
   DemoBanner,
 } from "@/components/StateBlock";
-import { DATE_WINDOWS, type DateWindowDays } from "@/lib/dateRange";
+import {
+  FilterBar,
+  type FormatFilter,
+  type SortKey,
+} from "@/components/FilterBar";
+import { usePersistedState } from "@/components/usePersistedState";
+import type { DateWindowDays } from "@/lib/dateRange";
 
 const SUBTITLE =
   "Top 50 des outliers les plus récents de TOUS tes concurrents. 0 quota en plus.";
-
-const SELECT_CLASS =
-  "rounded-lg border border-line bg-surface px-2.5 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40";
 
 export default function OutliersConcurrentsPage() {
   const [demo, setDemo] = useState(false);
@@ -24,18 +27,34 @@ export default function OutliersConcurrentsPage() {
       setDemo(true);
   }, []);
 
-  const [win, setWin] = useState<DateWindowDays>(30);
-  const [sort, setSort] = useState<"recent" | "ratio">("recent");
+  // Mêmes filtres que « Mes outliers » (audit UX F031) + mémoire par écran (F013).
+  const [format, setFormat] = usePersistedState<FormatFilter>(
+    "pkm-filtres:outliers-concurrents:format",
+    "all",
+  );
+  const [win, setWin] = usePersistedState<DateWindowDays>(
+    "pkm-filtres:outliers-concurrents:periode",
+    30,
+  );
+  const [sort, setSort] = usePersistedState<SortKey>(
+    "pkm-filtres:outliers-concurrents:tri",
+    "recent",
+  );
   const { items, loading, hasCredentials, isDemo } = useCompetitorOutliers(
     demo,
     win,
   );
 
   const list = useMemo(() => {
-    const arr = [...items];
-    if (sort === "ratio") arr.sort((a, b) => b.sv.ratio - a.sv.ratio);
+    let arr =
+      format === "all"
+        ? [...items]
+        : items.filter((it) => it.sv.video.format === format);
+    if (sort === "ratio") arr = arr.sort((a, b) => b.sv.ratio - a.sv.ratio);
+    else if (sort === "views")
+      arr = arr.sort((a, b) => b.sv.video.views - a.sv.video.views);
     return arr.slice(0, 50);
-  }, [items, sort]);
+  }, [items, sort, format]);
 
   if (loading)
     return (
@@ -48,10 +67,7 @@ export default function OutliersConcurrentsPage() {
     return (
       <>
         <PageHeader title="Outliers concurrents" subtitle={SUBTITLE} />
-        <CredentialsNotice
-          message="Ajoute YOUTUBE_API_KEY et des concurrents, ou explore la démo."
-          onDemo={() => setDemo(true)}
-        />
+        <CredentialsNotice message="Ajoute YOUTUBE_API_KEY et des concurrents, ou explore la démo." />
       </>
     );
 
@@ -63,31 +79,24 @@ export default function OutliersConcurrentsPage() {
         actions={isDemo ? <Badge tone="accent">Démo</Badge> : undefined}
       />
       {isDemo && <DemoBanner />}
-      <div className="mb-4 flex flex-wrap gap-2">
-        <select
-          value={win}
-          onChange={(e) => setWin(Number(e.target.value) as DateWindowDays)}
-          className={SELECT_CLASS}
-          aria-label="Fenêtre de dates"
-        >
-          {DATE_WINDOWS.map((w) => (
-            <option key={w.value} value={w.value}>
-              {w.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as "recent" | "ratio")}
-          className={SELECT_CLASS}
-          aria-label="Tri"
-        >
-          <option value="recent">Tri : récent</option>
-          <option value="ratio">Tri : ratio</option>
-        </select>
-      </div>
+      <FilterBar
+        format={format}
+        onFormat={setFormat}
+        window={win}
+        onWindow={setWin}
+        sort={sort}
+        onSort={setSort}
+      />
       <div className="mb-3 text-sm text-muted">
         {list.length} outlier{list.length > 1 ? "s" : ""}
+        {sort !== "recent" && (
+          // Honnêteté (audit UX F031) : la source ne renvoie que les 50 outliers
+          // les plus récents ; tri/filtre s'appliquent à ce lot, pas au global.
+          <span className="text-xs">
+            {" "}
+            · tri/filtre parmi les 50 plus récents
+          </span>
+        )}
       </div>
       {list.length === 0 ? (
         <EmptyState title="Aucun outlier de concurrent">

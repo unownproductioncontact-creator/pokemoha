@@ -9,10 +9,26 @@ export function LoadingBlock({ label = "Chargement…" }: { label?: string }) {
   );
 }
 
-export function ErrorBlock({ message }: { message?: string }) {
+export function ErrorBlock({
+  message,
+  onRetry,
+}: {
+  message?: string;
+  /** Relance sans recharger toute la page (audit UX G1-5) : fin du cul-de-sac. */
+  onRetry?: () => void;
+}) {
   return (
     <EmptyState title="Une erreur est survenue">
-      {message ?? "Réessaie plus tard."}
+      <p>{message ?? "Réessaie plus tard."}</p>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-4 rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-brand-ink hover:opacity-90"
+        >
+          Réessayer
+        </button>
+      )}
     </EmptyState>
   );
 }
@@ -28,13 +44,7 @@ export function DemoBanner() {
 }
 
 /** Aucune source de données : invite à connecter OAuth ou ajouter la clé API. */
-export function CredentialsNotice({
-  message,
-  onDemo,
-}: {
-  message?: string;
-  onDemo?: () => void;
-}) {
+export function CredentialsNotice({ message }: { message?: string }) {
   return (
     <EmptyState title="Connecte une source de données">
       <p>
@@ -48,15 +58,15 @@ export function CredentialsNotice({
         >
           Connecter ma chaîne
         </a>
-        {onDemo && (
-          <button
-            type="button"
-            onClick={onDemo}
-            className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium hover:bg-elevated"
-          >
-            Voir une démo
-          </button>
-        )}
+        {/* Démo pilotée par l'URL (audit UX F003) : navigation réelle vers
+            ?demo=1 → la page ET la sidebar voient la démo de façon cohérente,
+            donc les liens de nav conservent le mode démo. */}
+        <a
+          href="?demo=1"
+          className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium hover:bg-elevated"
+        >
+          Voir une démo
+        </a>
         <a
           href="/parametres"
           className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium hover:bg-elevated"

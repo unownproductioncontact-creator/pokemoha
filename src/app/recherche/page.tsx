@@ -63,7 +63,7 @@ export default function RecherchePage() {
           Lance une recherche pour voir des résultats classés.
         </p>
       ) : data.status === "no-credentials" ? (
-        <CredentialsNotice message={data.message} onDemo={() => setDemo(true)} />
+        <CredentialsNotice message={data.message} />
       ) : data.status === "error" ? (
         <ErrorBlock message={data.message} />
       ) : data.items.length === 0 ? (

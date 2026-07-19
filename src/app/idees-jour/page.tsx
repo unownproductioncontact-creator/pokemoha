@@ -48,7 +48,7 @@ export default function IdeesJourPage() {
     return (
       <>
         {header}
-        <CredentialsNotice message={data.message} onDemo={() => setDemo(true)} />
+        <CredentialsNotice message={data.message} />
       </>
     );
   if (data.status === "error")
@@ -70,7 +70,7 @@ export default function IdeesJourPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {data.ideas.map((i) => (
-            <IdeaCard key={i.id} idea={i} />
+            <IdeaCard key={i.id} idea={i} demo={data.demo} />
           ))}
         </div>
       )}

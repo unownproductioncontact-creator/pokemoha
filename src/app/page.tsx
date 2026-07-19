@@ -42,7 +42,7 @@ export default function DashboardPage() {
     return (
       <>
         <PageHeader title="Dashboard" subtitle={SUBTITLE} />
-        <CredentialsNotice message={data.message} onDemo={() => setDemo(true)} />
+        <CredentialsNotice message={data.message} />
       </>
     );
   if (data.status === "error")
@@ -105,7 +105,7 @@ export default function DashboardPage() {
         <StatCard
           label="Outliers"
           value={outliers.length}
-          hint="outlier + démarrage fort"
+          hint="dont démarrages forts (projetés)"
         />
       </div>
 
@@ -146,7 +146,7 @@ export default function DashboardPage() {
         <div className="mb-2 flex items-center justify-between">
           <h2 className="font-semibold">Dernières vidéos</h2>
           <a
-            href="/outliers"
+            href={data.demo ? "/outliers?demo=1" : "/outliers"}
             className="text-sm font-medium text-brand hover:underline"
           >
             Voir tous les outliers →

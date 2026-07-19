@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAlerts } from "@/components/dataHooks";
-import { PageHeader, Badge, EmptyState } from "@/components/ui";
+import { PageHeader, Badge, EmptyState, SEVERITY_META } from "@/components/ui";
 import {
   CredentialsNotice,
   LoadingBlock,
@@ -10,12 +10,12 @@ import {
   DemoBanner,
 } from "@/components/StateBlock";
 import type { Alert } from "@/lib/alertsCore";
-import type { Tone } from "@/components/ui";
 
-const SEV: Record<Alert["severity"], { tone: Tone; border: string }> = {
-  high: { tone: "danger", border: "var(--danger)" },
-  medium: { tone: "warning", border: "var(--warning)" },
-  low: { tone: "muted", border: "var(--muted)" },
+// Bordure gauche colorée par sévérité (ton + libellé viennent de SEVERITY_META).
+const SEV_BORDER: Record<Alert["severity"], string> = {
+  high: "var(--danger)",
+  medium: "var(--warning)",
+  low: "var(--muted)",
 };
 
 const SUBTITLE =
@@ -55,7 +55,7 @@ export default function AlertesPage() {
     return (
       <>
         {header}
-        <CredentialsNotice message={data.message} onDemo={() => setDemo(true)} />
+        <CredentialsNotice message={data.message} />
       </>
     );
   if (data.status === "error")
@@ -83,11 +83,13 @@ export default function AlertesPage() {
             <div
               key={a.id}
               className="rounded-xl border border-l-[3px] border-line bg-surface p-3"
-              style={{ borderLeftColor: SEV[a.severity].border }}
+              style={{ borderLeftColor: SEV_BORDER[a.severity] }}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="text-sm font-medium">{a.title}</div>
-                <Badge tone={SEV[a.severity].tone}>{a.severity}</Badge>
+                <Badge tone={SEVERITY_META[a.severity].tone}>
+                  {SEVERITY_META[a.severity].label}
+                </Badge>
               </div>
               <p className="mt-1 text-xs text-muted">{a.detail}</p>
               {a.href && (

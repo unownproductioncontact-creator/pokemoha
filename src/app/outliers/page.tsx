@@ -17,6 +17,7 @@ import {
 } from "@/components/StateBlock";
 import type { DateWindowDays } from "@/lib/dateRange";
 import { selectTopOutliers } from "@/lib/outlierCore";
+import { usePersistedState } from "@/components/usePersistedState";
 
 const SUBTITLE =
   "Tes vidéos qui sur-performent vs ta propre médiane, par format.";
@@ -28,9 +29,19 @@ export default function OutliersPage() {
       setDemo(true);
   }, []);
   const { loading, data } = useChannelAnalysis({ demo });
-  const [format, setFormat] = useState<FormatFilter>("all");
-  const [win, setWin] = useState<DateWindowDays>(30);
-  const [sort, setSort] = useState<SortKey>("ratio");
+  // Filtres mémorisés par écran (audit UX F013) : plus de réglages à refaire.
+  const [format, setFormat] = usePersistedState<FormatFilter>(
+    "pkm-filtres:outliers:format",
+    "all",
+  );
+  const [win, setWin] = usePersistedState<DateWindowDays>(
+    "pkm-filtres:outliers:periode",
+    30,
+  );
+  const [sort, setSort] = usePersistedState<SortKey>(
+    "pkm-filtres:outliers:tri",
+    "ratio",
+  );
 
   const list = useMemo(() => {
     const scored = data?.scored ?? [];
@@ -49,28 +60,28 @@ export default function OutliersPage() {
   if (loading)
     return (
       <>
-        <PageHeader title="Outliers" subtitle={SUBTITLE} />
+        <PageHeader title="Mes outliers" subtitle={SUBTITLE} />
         <LoadingBlock />
       </>
     );
   if (!data)
     return (
       <>
-        <PageHeader title="Outliers" subtitle={SUBTITLE} />
+        <PageHeader title="Mes outliers" subtitle={SUBTITLE} />
         <ErrorBlock />
       </>
     );
   if (data.status === "no-credentials" || data.status === "unconfigured")
     return (
       <>
-        <PageHeader title="Outliers" subtitle={SUBTITLE} />
-        <CredentialsNotice message={data.message} onDemo={() => setDemo(true)} />
+        <PageHeader title="Mes outliers" subtitle={SUBTITLE} />
+        <CredentialsNotice message={data.message} />
       </>
     );
   if (data.status === "error")
     return (
       <>
-        <PageHeader title="Outliers" subtitle={SUBTITLE} />
+        <PageHeader title="Mes outliers" subtitle={SUBTITLE} />
         <ErrorBlock message={data.message} />
       </>
     );
@@ -78,7 +89,7 @@ export default function OutliersPage() {
   return (
     <>
       <PageHeader
-        title="Outliers"
+        title="Mes outliers"
         subtitle={SUBTITLE}
         actions={data.demo ? <Badge tone="accent">Démo</Badge> : undefined}
       />
