@@ -98,7 +98,16 @@ export default function CtrPage() {
         <Metric label="Watch time (28 j)" m={data.watchTimeMin} />
         <Metric label="Vues (28 j)" m={data.views28} />
       </div>
-      <Card className="mt-4 p-4 text-sm text-muted">
+      {/* Honnêteté §0 : ces valeurs agrègent TOUS les formats. Shorts et vidéos
+          longues ont des CTR/rétentions très différents — le split par format
+          arrivera avec la Reporting API par format (reconnexion requise). */}
+      <Card className="mt-4 p-4 text-xs text-muted">
+        ⚠️ Ces chiffres <strong>agrègent Shorts et vidéos longues</strong>. Leurs
+        CTR et rétentions diffèrent fortement : lis-les comme une tendance
+        globale, pas comme une valeur par format. La ventilation par format est
+        en cours (Reporting API).
+      </Card>
+      <Card className="mt-3 p-4 text-sm text-muted">
         <strong className="text-ink">Concurrents :</strong> le CTR et la
         rétention d&apos;une chaîne tierce sont privés →{" "}
         <Badge tone="muted">indisponible</Badge>. Aucune valeur n&apos;est

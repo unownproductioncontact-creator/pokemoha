@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { analyzeIdea } from "@/lib/ideaRanking";
-import { PageHeader, Card, Badge } from "@/components/ui";
+import { PageHeader, Card, Badge, DataBadge } from "@/components/ui";
 import { LoadingBlock } from "@/components/StateBlock";
 import type { ThumbResult } from "@/lib/types";
 
@@ -135,6 +135,11 @@ export default function TitresMiniaturesPage() {
       />
 
       <h2 className="mb-2 font-semibold">A/B Titres</h2>
+      <p className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted">
+        <DataBadge status="estimated" />
+        Note heuristique (longueur, enjeu/curiosité, format identifiable,
+        spécificité) — un repère, <strong>pas</strong> une garantie de CTR réel.
+      </p>
       <form onSubmit={cmpTitles} className="mb-3 grid gap-2 sm:grid-cols-2">
         <input
           value={ta}
@@ -168,6 +173,12 @@ export default function TitresMiniaturesPage() {
             <div className="text-2xl font-bold tabular-nums">{tRes.b}/100</div>
             {tWinner === "B" && <Badge tone="success">gagnant</Badge>}
           </Card>
+          {/* Verdict avec son critère (F007) — jamais un « gagnant » sans preuve. */}
+          <p className="text-xs text-muted sm:col-span-2">
+            {tWinner
+              ? `Titre ${tWinner} en tête de ${Math.abs(tRes.a - tRes.b)} pt sur la note heuristique — teste-le, mais la vraie preuve reste le CTR après publication.`
+              : "Égalité sur la note heuristique — départage-les par ton audience / le CTR réel."}
+          </p>
         </div>
       )}
 
