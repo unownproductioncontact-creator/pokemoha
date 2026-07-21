@@ -18,12 +18,6 @@ import type {
   HistoryResult,
 } from "@/lib/types";
 
-export interface AsyncState<T> {
-  loading: boolean;
-  data?: T;
-  error?: string;
-}
-
 type QVal = string | number | boolean | undefined | null;
 
 /** Construit une URL d'API en omettant les paramètres vides/false. */
@@ -96,11 +90,18 @@ export function useCompetitorOutliers(demo?: boolean, windowDays = 0) {
   };
 }
 
+/** Lance une erreur si la réponse n'est pas OK — sinon une écriture échouée
+ *  (500, {ok:false}) serait présentée comme un succès (viole §0). */
+async function mutateApi(url: string, init: RequestInit) {
+  const res = await fetch(url, init);
+  if (!res.ok) throw new Error(`Échec (${res.status}) sur ${url}`);
+}
+
 export async function postCompetitor(
   action: "add" | "remove",
   payload: { ref?: string; id?: string; label?: string },
 ) {
-  await fetch("/api/competitors", {
+  await mutateApi("/api/competitors", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ action, ...payload }),
@@ -115,7 +116,7 @@ export async function saveInspiration(insp: {
   ratio?: number;
   thumb?: string;
 }) {
-  await fetch("/api/inspirations", {
+  await mutateApi("/api/inspirations", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(insp),
@@ -123,7 +124,7 @@ export async function saveInspiration(insp: {
 }
 
 export async function deleteInspiration(id: string) {
-  await fetch(`/api/inspirations?id=${encodeURIComponent(id)}`, {
+  await mutateApi(`/api/inspirations?id=${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
 }
@@ -199,7 +200,11 @@ export function useSearch() {
   function run(q: string, demo?: boolean) {
     if (!q.trim() && !demo) return;
     setPending(true);
-    setUrl(apiUrl("/api/search", { q, demo }));
+    const next = apiUrl("/api/search", { q, demo });
+    // Même requête relancée : l'URL ne change pas → React bail-out. On force
+    // alors une revalidation via reload() au lieu d'un no-op silencieux.
+    if (next === url) r.reload();
+    else setUrl(next);
   }
 
   return {

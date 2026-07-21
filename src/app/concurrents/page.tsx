@@ -136,17 +136,28 @@ export default function ConcurrentsPage() {
     e.preventDefault();
     if (!addRef.trim() || demo) return;
     setAdding(true);
-    await postCompetitor("add", { ref: addRef.trim() });
-    setAddRef("");
-    setAdding(false);
-    reload();
+    // try/finally : en cas d'échec serveur, reload() reflète l'état RÉEL (le
+    // concurrent n'a pas été ajouté) plutôt qu'un faux succès (§0).
+    try {
+      await postCompetitor("add", { ref: addRef.trim() });
+      setAddRef("");
+    } catch {
+      /* l'échec se voit dans la liste rechargée ci-dessous */
+    } finally {
+      setAdding(false);
+      reload();
+    }
   }
 
   async function confirmDelete() {
     if (!pending) return;
     const id = pending.id;
     setPending(null);
-    await postCompetitor("remove", { id });
+    try {
+      await postCompetitor("remove", { id });
+    } catch {
+      /* idem : reload() ré-affiche le concurrent s'il n'a pas été retiré */
+    }
     reload();
   }
 
@@ -257,8 +268,11 @@ export default function ConcurrentsPage() {
                           type="button"
                           disabled={demo}
                           onClick={async () => {
-                            await postCompetitor("add", { ref: ch.title });
-                            reload();
+                            try {
+                              await postCompetitor("add", { ref: ch.title });
+                            } finally {
+                              reload();
+                            }
                           }}
                           className="rounded-md border border-line px-2 py-1 text-xs hover:bg-elevated disabled:opacity-50"
                         >
@@ -302,8 +316,11 @@ export default function ConcurrentsPage() {
                     <button
                       type="button"
                       onClick={async () => {
-                        await deleteInspiration(it.id);
-                        insp.reload();
+                        try {
+                          await deleteInspiration(it.id);
+                        } finally {
+                          insp.reload();
+                        }
                       }}
                       className="text-xs text-muted hover:text-danger"
                     >

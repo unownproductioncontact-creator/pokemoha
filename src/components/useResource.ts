@@ -3,7 +3,7 @@
 // Cache client stale-while-revalidate (audit UX F017). Un même endpoint n'affiche
 // plus un spinner plein écran à chaque montage : la donnée déjà vue s'affiche
 // instantanément (stale) pendant qu'une révalidation tourne en fond. Dédup des
-// requêtes concurrentes sur une même clé (URL), et `mutate` pour l'UI optimiste.
+// requêtes concurrentes sur une même clé (URL).
 //
 // Portée : mémoire de session (réinitialisé au rechargement complet). Aucune
 // donnée inventée — c'est le MÊME JSON serveur, juste mémorisé côté client.
@@ -40,29 +40,21 @@ function fetchKey<T>(url: string): Promise<T> {
   return p;
 }
 
-/** Écrit une valeur en cache SANS refetch (UI optimiste). */
-export function mutateResource<T>(url: string, data: T): void {
-  cache.set(url, { data, ts: Date.now() });
-}
-
-/** Purge une clé (force le prochain fetch à repartir du serveur). */
-export function invalidateResource(url: string): void {
+/** Purge une clé : cache ET requête en vol. Vider `inflight` est indispensable —
+ *  sinon un GET lancé AVANT une mutation serait réutilisé par la revalidation qui
+ *  la suit, ré-affichant (et re-cachant comme « frais ») des données périmées. */
+function purge(url: string): void {
   cache.delete(url);
+  inflight.delete(url);
 }
 
 export interface Resource<T> {
   /** Vrai UNIQUEMENT au tout premier chargement (aucune donnée en cache). */
   loading: boolean;
-  /** Révalidation en fond alors qu'une donnée (stale) est déjà affichée. */
-  validating: boolean;
   data?: T;
   error?: string;
-  /** epoch ms de la donnée affichée (fraîcheur, F028). */
-  updatedAt?: number;
-  /** Purge le cache et refetch (bouton « Réessayer » / « Rafraîchir »). */
+  /** Purge le cache (+ la requête en vol) et refetch : « Réessayer »/« Rafraîchir ». */
   reload: () => void;
-  /** Remplace la donnée localement + en cache, sans refetch (optimiste). */
-  mutate: (data: T) => void;
 }
 
 /**
@@ -70,15 +62,8 @@ export interface Resource<T> {
  */
 export function useResource<T>(url: string | null): Resource<T> {
   const initial = url ? (cache.get(url) as Entry<T> | undefined) : undefined;
-  const [state, setState] = useState<{
-    data?: T;
-    error?: string;
-    validating: boolean;
-    updatedAt?: number;
-  }>(() => ({
+  const [state, setState] = useState<{ data?: T; error?: string }>(() => ({
     data: initial?.data,
-    updatedAt: initial?.ts,
-    validating: false,
   }));
   const [nonce, setNonce] = useState(0);
 
@@ -88,32 +73,16 @@ export function useResource<T>(url: string | null): Resource<T> {
     const fresh = hit !== undefined && Date.now() - hit.ts < DEDUPE_MS;
     // Affiche le cache immédiatement (stale). Révalide en fond SAUF si le cache
     // est encore frais (< DEDUPE_MS) — dans ce cas on évite le refetch.
-    setState({
-      data: hit?.data,
-      updatedAt: hit?.ts,
-      error: undefined,
-      validating: !fresh,
-    });
+    setState({ data: hit?.data, error: undefined });
     if (fresh) return;
     let alive = true;
     fetchKey<T>(url)
       .then((d) => {
-        if (alive)
-          setState({
-            data: d,
-            updatedAt: Date.now(),
-            error: undefined,
-            validating: false,
-          });
+        if (alive) setState({ data: d, error: undefined });
       })
       .catch((e) => {
-        if (alive)
-          setState((s) => ({
-            data: s.data,
-            updatedAt: s.updatedAt,
-            error: String(e),
-            validating: false,
-          }));
+        // Garde la donnée périmée à l'écran, mais signale l'erreur.
+        if (alive) setState((s) => ({ data: s.data, error: String(e) }));
       });
     return () => {
       alive = false;
@@ -122,17 +91,11 @@ export function useResource<T>(url: string | null): Resource<T> {
 
   return {
     loading: state.data === undefined && !state.error,
-    validating: state.validating,
     data: state.data,
     error: state.error,
-    updatedAt: state.updatedAt,
     reload: () => {
-      if (url) cache.delete(url);
+      if (url) purge(url);
       setNonce((n) => n + 1);
-    },
-    mutate: (data: T) => {
-      if (url) cache.set(url, { data, ts: Date.now() });
-      setState({ data, updatedAt: Date.now(), validating: false });
     },
   };
 }

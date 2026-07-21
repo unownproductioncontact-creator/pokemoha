@@ -24,30 +24,38 @@ function SaveButton({
   sv: ScoredVideo;
   onSaved?: () => void;
 }) {
-  const [saved, setSaved] = useState(false);
+  const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
   const Bulb = ICONS.bulb;
   return (
     <button
       type="button"
       onClick={async () => {
-        await saveInspiration({
-          videoId: sv.video.id,
-          title: sv.video.title,
-          url: `https://www.youtube.com/watch?v=${sv.video.id}`,
-          channelTitle: sv.video.channelTitle,
-          ratio: sv.ratio,
-          thumb: sv.video.thumbnails?.medium,
-        });
-        setSaved(true);
-        // Rafraîchit la liste « Inspirations sauvegardées » (audit UX/review :
-        // sinon le cache SWR la garde périmée jusqu'à expiration du dedup).
-        onSaved?.();
+        try {
+          await saveInspiration({
+            videoId: sv.video.id,
+            title: sv.video.title,
+            url: `https://www.youtube.com/watch?v=${sv.video.id}`,
+            channelTitle: sv.video.channelTitle,
+            ratio: sv.ratio,
+            thumb: sv.video.thumbnails?.medium,
+          });
+          // Succès CONFIRMÉ seulement (§0 : ne jamais afficher un enregistrement
+          // qui n'a pas eu lieu). Rafraîchit la liste « Inspirations sauvegardées ».
+          setStatus("saved");
+          onSaved?.();
+        } catch {
+          setStatus("error");
+        }
       }}
-      disabled={saved}
+      disabled={status === "saved"}
       className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline disabled:text-muted disabled:no-underline"
     >
       <Bulb className="h-3.5 w-3.5" />
-      {saved ? "Inspiration enregistrée" : "Sauver l'inspiration"}
+      {status === "saved"
+        ? "Inspiration enregistrée"
+        : status === "error"
+          ? "Échec — réessayer"
+          : "Sauver l'inspiration"}
     </button>
   );
 }
