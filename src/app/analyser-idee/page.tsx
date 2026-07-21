@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { analyzeIdea } from "@/lib/ideaRanking";
 import { generateTitles } from "@/lib/titleGen";
 import { PageHeader, Card } from "@/components/ui";
@@ -11,13 +11,33 @@ type Result = { a: ReturnType<typeof analyzeIdea>; titles: string[] };
 export default function AnalyserIdeePage() {
   const [text, setText] = useState("");
   const [res, setRes] = useState<Result | null>(null);
+  const [demo, setDemo] = useState(false);
+
+  function analyze(t: string) {
+    const s = t.trim();
+    if (!s) return;
+    setRes({ a: analyzeIdea(s), titles: generateTitles(s, { n: 30 }) });
+  }
+
+  // Pipeline sans ressaisie (audit UX F006) : arrive pré-rempli depuis une idée
+  // ou une alerte via ?idee=, et lance l'analyse tout seul.
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("demo") === "1") setDemo(true);
+    const idee = sp.get("idee");
+    if (idee) {
+      setText(idee);
+      analyze(idee);
+    }
+  }, []);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const t = text.trim();
-    if (!t) return;
-    setRes({ a: analyzeIdea(t), titles: generateTitles(t, { n: 30 }) });
+    analyze(text);
   }
+
+  const d = demo ? "&demo=1" : "";
+  const enc = encodeURIComponent(text.trim());
 
   return (
     <>
@@ -86,6 +106,22 @@ export default function AnalyserIdeePage() {
 
           <h2 className="mb-2 mt-6 font-semibold">~30 titres (clique pour copier)</h2>
           <TitleList titles={res.titles} />
+
+          {/* Étapes suivantes du pipeline (F006) — le sujet est transporté. */}
+          <div className="mt-6 flex flex-wrap gap-2 border-t border-line pt-4">
+            <a
+              href={`/generateur-titres?idee=${enc}${d}`}
+              className="rounded-lg bg-brand px-3 py-2 text-sm font-medium text-brand-ink hover:opacity-90"
+            >
+              Titres inspirés de mes outliers →
+            </a>
+            <a
+              href={`/titres-miniatures?ta=${encodeURIComponent(res.titles[0] ?? "")}&tb=${encodeURIComponent(res.titles[1] ?? "")}${d}`}
+              className="rounded-lg border border-line px-3 py-2 text-sm font-medium hover:bg-elevated"
+            >
+              Comparer 2 titres en A/B →
+            </a>
+          </div>
         </>
       )}
     </>

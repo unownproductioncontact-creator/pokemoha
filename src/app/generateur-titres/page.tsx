@@ -116,6 +116,22 @@ export default function GenerateurTitresPage() {
             </p>
             <TitleList titles={offline} />
           </section>
+
+          {/* Étapes du pipeline (F006) — le sujet & les titres sont transportés. */}
+          <div className="flex flex-wrap gap-2 border-t border-line pt-4">
+            <a
+              href={`/analyser-idee?idee=${encodeURIComponent(submitted)}${demo ? "&demo=1" : ""}`}
+              className="rounded-lg border border-line px-3 py-2 text-sm font-medium hover:bg-elevated"
+            >
+              ← Analyser l&apos;angle &amp; la note
+            </a>
+            <a
+              href={`/titres-miniatures?ta=${encodeURIComponent(dataDriven[0]?.title ?? offline[0] ?? submitted)}&tb=${encodeURIComponent(dataDriven[1]?.title ?? offline[1] ?? "")}${demo ? "&demo=1" : ""}`}
+              className="rounded-lg bg-brand px-3 py-2 text-sm font-medium text-brand-ink hover:opacity-90"
+            >
+              Comparer en A/B &amp; la miniature →
+            </a>
+          </div>
         </div>
       )}
     </>

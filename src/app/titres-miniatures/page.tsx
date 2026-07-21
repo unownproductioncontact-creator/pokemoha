@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { analyzeIdea } from "@/lib/ideaRanking";
 import { PageHeader, Card, Badge } from "@/components/ui";
 import { LoadingBlock } from "@/components/StateBlock";
@@ -72,6 +72,21 @@ export default function TitresMiniaturesPage() {
     loading: boolean;
     done: boolean;
   }>({ loading: false, done: false });
+
+  // Pré-remplissage depuis le pipeline (audit UX F006) : ?ta=&tb= (titres) et
+  // ?ua=&ub= (miniatures) — auto-compare les titres arrivés pré-remplis.
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const a = sp.get("ta") ?? "";
+    const b = sp.get("tb") ?? "";
+    const uaP = sp.get("ua") ?? "";
+    const ubP = sp.get("ub") ?? "";
+    if (a) setTa(a);
+    if (b) setTb(b);
+    if (uaP) setUa(uaP);
+    if (ubP) setUb(ubP);
+    if (a || b) setTRes({ a: analyzeIdea(a).score, b: analyzeIdea(b).score });
+  }, []);
 
   function cmpTitles(e: React.FormEvent) {
     e.preventDefault();
@@ -157,6 +172,10 @@ export default function TitresMiniaturesPage() {
       )}
 
       <h2 className="mb-2 font-semibold">A/B Miniatures</h2>
+      <p className="mb-3 text-xs text-muted">
+        Compare deux miniatures <strong>déjà en ligne</strong> (colle l&apos;URL ou
+        l&apos;ID d&apos;une vidéo YouTube existante — la tienne ou une référence).
+      </p>
       <form onSubmit={cmpThumbs} className="mb-3 grid gap-2 sm:grid-cols-2">
         <input
           value={ua}

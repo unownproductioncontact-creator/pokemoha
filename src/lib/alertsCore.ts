@@ -94,10 +94,19 @@ export function buildAlerts(input: {
     }
   }
 
-  alerts.sort(
+  // Dédup par id : deux outliers concurrents peuvent porter la même vidéo →
+  // même id `co-<videoId>` → clés React dupliquées à l'affichage.
+  const seen = new Set<string>();
+  const deduped = alerts.filter((a) => {
+    if (seen.has(a.id)) return false;
+    seen.add(a.id);
+    return true;
+  });
+
+  deduped.sort(
     (a, b) =>
       SEV_RANK[a.severity] - SEV_RANK[b.severity] ||
       (a.ageDays ?? 999) - (b.ageDays ?? 999),
   );
-  return alerts.slice(0, 40);
+  return deduped.slice(0, 40);
 }
