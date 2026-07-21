@@ -17,7 +17,13 @@ import { selectTopOutliers } from "@/lib/outlierCore";
 import type { DateWindowDays } from "@/lib/dateRange";
 import type { ScoredVideo } from "@/lib/types";
 
-function SaveButton({ sv }: { sv: ScoredVideo }) {
+function SaveButton({
+  sv,
+  onSaved,
+}: {
+  sv: ScoredVideo;
+  onSaved?: () => void;
+}) {
   const [saved, setSaved] = useState(false);
   const Bulb = ICONS.bulb;
   return (
@@ -33,6 +39,9 @@ function SaveButton({ sv }: { sv: ScoredVideo }) {
           thumb: sv.video.thumbnails?.medium,
         });
         setSaved(true);
+        // Rafraîchit la liste « Inspirations sauvegardées » (audit UX/review :
+        // sinon le cache SWR la garde périmée jusqu'à expiration du dedup).
+        onSaved?.();
       }}
       disabled={saved}
       className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline disabled:text-muted disabled:no-underline"
@@ -47,10 +56,12 @@ export function CompetitorDetail({
   id,
   demo,
   onBack,
+  onInspirationSaved,
 }: {
   id: string;
   demo?: boolean;
   onBack: () => void;
+  onInspirationSaved?: () => void;
 }) {
   const { loading, data } = useCompetitorDetail(id, demo);
   const [format, setFormat] = useState<FormatFilter>("all");
@@ -153,7 +164,11 @@ export function CompetitorDetail({
       ) : (
         <div className="space-y-2">
           {list.map((s) => (
-            <VideoRow key={s.video.id} sv={s} action={<SaveButton sv={s} />} />
+            <VideoRow
+              key={s.video.id}
+              sv={s}
+              action={<SaveButton sv={s} onSaved={onInspirationSaved} />}
+            />
           ))}
         </div>
       )}

@@ -126,6 +126,7 @@ export default function ConcurrentsPage() {
           id={selectedId}
           demo={demo}
           onBack={() => setSelectedId(null)}
+          onInspirationSaved={insp.reload}
         />
       </>
     );

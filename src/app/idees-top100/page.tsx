@@ -20,7 +20,7 @@ export default function IdeesTop100Page() {
     if (new URLSearchParams(window.location.search).get("demo") === "1")
       setDemo(true);
   }, []);
-  const { loading, data } = useIdeas(demo, false);
+  const { loading, data, reload } = useIdeas(demo, false);
   // Filtre instantané côté client (audit UX G1-0) : retrouver « coffret » ou
   // « Dracaufeu » sans scanner 50 rangées. 0 quota.
   const [query, setQuery] = useState("");
@@ -55,7 +55,7 @@ export default function IdeesTop100Page() {
     return (
       <>
         {header}
-        <ErrorBlock />
+        <ErrorBlock onRetry={reload} />
       </>
     );
   if (data.status === "no-credentials")
@@ -69,7 +69,7 @@ export default function IdeesTop100Page() {
     return (
       <>
         {header}
-        <ErrorBlock message={data.message} />
+        <ErrorBlock message={data.message} onRetry={reload} />
       </>
     );
 

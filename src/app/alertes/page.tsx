@@ -27,7 +27,7 @@ export default function AlertesPage() {
     if (new URLSearchParams(window.location.search).get("demo") === "1")
       setDemo(true);
   }, []);
-  const { loading, data } = useAlerts(demo);
+  const { loading, data, reload } = useAlerts(demo);
 
   const header = (
     <PageHeader
@@ -48,7 +48,7 @@ export default function AlertesPage() {
     return (
       <>
         {header}
-        <ErrorBlock />
+        <ErrorBlock onRetry={reload} />
       </>
     );
   if (data.status === "no-credentials")
@@ -62,7 +62,7 @@ export default function AlertesPage() {
     return (
       <>
         {header}
-        <ErrorBlock message={data.message} />
+        <ErrorBlock message={data.message} onRetry={reload} />
       </>
     );
 

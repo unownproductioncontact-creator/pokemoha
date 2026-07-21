@@ -22,7 +22,7 @@ export default function OptimiserPage() {
     if (new URLSearchParams(window.location.search).get("demo") === "1")
       setDemo(true);
   }, []);
-  const { loading, data } = useChannelAnalysis({ demo });
+  const { loading, data, reload } = useChannelAnalysis({ demo });
 
   const { recent, winners } = useMemo(() => {
     const scored = data?.scored ?? [];
@@ -61,7 +61,7 @@ export default function OptimiserPage() {
     return (
       <>
         {header}
-        <ErrorBlock />
+        <ErrorBlock onRetry={reload} />
       </>
     );
   if (data.status === "no-credentials" || data.status === "unconfigured")
@@ -75,7 +75,7 @@ export default function OptimiserPage() {
     return (
       <>
         {header}
-        <ErrorBlock message={data.message} />
+        <ErrorBlock message={data.message} onRetry={reload} />
       </>
     );
 

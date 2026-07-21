@@ -93,7 +93,7 @@ export default function GenerateurTitresPage() {
                 Le générateur générique ci-dessous marche déjà sans.
               </Card>
             ) : patterns.data?.status === "error" ? (
-              <ErrorBlock message={patterns.data.message} />
+              <ErrorBlock message={patterns.data.message} onRetry={patterns.reload} />
             ) : dataDriven.length === 0 ? (
               <Card className="p-4 text-sm text-muted">
                 Pas encore de modèle applicable à ce sujet — soit tes outliers

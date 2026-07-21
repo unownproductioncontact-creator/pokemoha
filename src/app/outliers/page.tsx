@@ -28,7 +28,7 @@ export default function OutliersPage() {
     if (new URLSearchParams(window.location.search).get("demo") === "1")
       setDemo(true);
   }, []);
-  const { loading, data } = useChannelAnalysis({ demo });
+  const { loading, data, reload } = useChannelAnalysis({ demo });
   // Filtres mémorisés par écran (audit UX F013) : plus de réglages à refaire.
   const [format, setFormat] = usePersistedState<FormatFilter>(
     "pkm-filtres:outliers:format",
@@ -68,7 +68,7 @@ export default function OutliersPage() {
     return (
       <>
         <PageHeader title="Mes outliers" subtitle={SUBTITLE} />
-        <ErrorBlock />
+        <ErrorBlock onRetry={reload} />
       </>
     );
   if (data.status === "no-credentials" || data.status === "unconfigured")
@@ -82,7 +82,7 @@ export default function OutliersPage() {
     return (
       <>
         <PageHeader title="Mes outliers" subtitle={SUBTITLE} />
-        <ErrorBlock message={data.message} />
+        <ErrorBlock message={data.message} onRetry={reload} />
       </>
     );
 

@@ -83,7 +83,7 @@ export default function AuditPage() {
     if (new URLSearchParams(window.location.search).get("demo") === "1")
       setDemo(true);
   }, []);
-  const { loading, data } = useAudit(demo);
+  const { loading, data, reload } = useAudit(demo);
 
   const header = (
     <PageHeader
@@ -104,7 +104,7 @@ export default function AuditPage() {
     return (
       <>
         {header}
-        <ErrorBlock />
+        <ErrorBlock onRetry={reload} />
       </>
     );
   if (data.status === "no-credentials" || data.status === "unconfigured")
@@ -118,7 +118,7 @@ export default function AuditPage() {
     return (
       <>
         {header}
-        <ErrorBlock message={data.message} />
+        <ErrorBlock message={data.message} onRetry={reload} />
       </>
     );
 

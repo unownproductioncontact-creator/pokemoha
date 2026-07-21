@@ -53,7 +53,7 @@ export default function DiagnosticPage() {
     return (
       <>
         {header}
-        <ErrorBlock />
+        <ErrorBlock onRetry={reload} />
       </>
     );
 

@@ -49,7 +49,7 @@ export default function CtrPage() {
     if (new URLSearchParams(window.location.search).get("demo") === "1")
       setDemo(true);
   }, []);
-  const { loading, data } = useCtr(demo);
+  const { loading, data, reload } = useCtr(demo);
 
   const header = (
     <PageHeader
@@ -70,7 +70,7 @@ export default function CtrPage() {
     return (
       <>
         {header}
-        <ErrorBlock />
+        <ErrorBlock onRetry={reload} />
       </>
     );
   if (data.status === "no-credentials")
@@ -84,7 +84,7 @@ export default function CtrPage() {
     return (
       <>
         {header}
-        <ErrorBlock message={data.message} />
+        <ErrorBlock message={data.message} onRetry={reload} />
       </>
     );
 

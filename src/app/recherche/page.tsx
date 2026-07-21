@@ -65,7 +65,10 @@ export default function RecherchePage() {
       ) : data.status === "no-credentials" ? (
         <CredentialsNotice message={data.message} />
       ) : data.status === "error" ? (
-        <ErrorBlock message={data.message} />
+        <ErrorBlock
+          message={data.message}
+          onRetry={() => search.run(q || "pokémon", demo)}
+        />
       ) : data.items.length === 0 ? (
         <EmptyState title="Aucun résultat">Essaie d&apos;autres mots-clés.</EmptyState>
       ) : (

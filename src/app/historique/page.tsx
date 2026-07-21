@@ -7,7 +7,7 @@ import { LoadingBlock, ErrorBlock } from "@/components/StateBlock";
 import { ageLabel, DAY_MS } from "@/lib/dateRange";
 
 export default function HistoriquePage() {
-  const { loading, data } = useHistory();
+  const { loading, data, reload } = useHistory();
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     setNow(Date.now());
@@ -31,7 +31,7 @@ export default function HistoriquePage() {
     return (
       <>
         {header}
-        <ErrorBlock />
+        <ErrorBlock onRetry={reload} />
       </>
     );
 

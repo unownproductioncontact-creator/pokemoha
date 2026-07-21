@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useResource, type Resource } from "@/components/useResource";
 import type {
   ChannelAnalysis,
   CompetitorsResult,
@@ -23,35 +24,31 @@ export interface AsyncState<T> {
   error?: string;
 }
 
-/** Récupère l'analyse de MA chaîne via /api/my-channel (cache fichier côté serveur). */
+type QVal = string | number | boolean | undefined | null;
+
+/** Construit une URL d'API en omettant les paramètres vides/false. */
+function apiUrl(base: string, params: Record<string, QVal> = {}): string {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || v === false || v === "") continue;
+    p.set(k, v === true ? "1" : String(v));
+  }
+  const qs = p.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
+// ───────────────────────── Ma chaîne / outliers ─────────────────────────
+
+/** Analyse de MA chaîne via /api/my-channel (SWR client + cache fichier serveur). */
 export function useChannelAnalysis(
   opts: { channelId?: string; demo?: boolean } = {},
-) {
-  const { channelId, demo } = opts;
-  const [state, setState] = useState<AsyncState<ChannelAnalysis>>({
-    loading: true,
-  });
-  useEffect(() => {
-    let alive = true;
-    setState({ loading: true });
-    const p = new URLSearchParams();
-    if (channelId) p.set("channelId", channelId);
-    if (demo) p.set("demo", "1");
-    const qs = p.toString();
-    fetch("/api/my-channel" + (qs ? `?${qs}` : ""))
-      .then((r) => r.json())
-      .then((d: ChannelAnalysis) => {
-        if (alive) setState({ loading: false, data: d });
-      })
-      .catch((e) => {
-        if (alive) setState({ loading: false, error: String(e) });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [channelId, demo]);
-  return state;
+): Resource<ChannelAnalysis> {
+  return useResource<ChannelAnalysis>(
+    apiUrl("/api/my-channel", { channelId: opts.channelId, demo: opts.demo }),
+  );
 }
+
+// ───────────────────────── Concurrents ─────────────────────────
 
 export interface InspirationItem {
   id: string;
@@ -64,100 +61,39 @@ export interface InspirationItem {
   savedAt: number;
 }
 
-export function useCompetitors(demo?: boolean) {
-  const [tick, setTick] = useState(0);
-  const [state, setState] = useState<AsyncState<CompetitorsResult>>({
-    loading: true,
-  });
-  useEffect(() => {
-    let alive = true;
-    setState({ loading: true });
-    fetch("/api/competitors" + (demo ? "?demo=1" : ""))
-      .then((r) => r.json())
-      .then((d: CompetitorsResult) => {
-        if (alive) setState({ loading: false, data: d });
-      })
-      .catch((e) => {
-        if (alive) setState({ loading: false, error: String(e) });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [demo, tick]);
-  return { ...state, reload: () => setTick((t) => t + 1) };
+export function useCompetitors(demo?: boolean): Resource<CompetitorsResult> {
+  return useResource<CompetitorsResult>(apiUrl("/api/competitors", { demo }));
 }
 
-export function useCompetitorDetail(id: string, demo?: boolean) {
-  const [state, setState] = useState<AsyncState<CompetitorAnalysis>>({
-    loading: true,
-  });
-  useEffect(() => {
-    let alive = true;
-    setState({ loading: true });
-    fetch(
-      `/api/competitors/${encodeURIComponent(id)}` + (demo ? "?demo=1" : ""),
-    )
-      .then((r) => r.json())
-      .then((d: CompetitorAnalysis) => {
-        if (alive) setState({ loading: false, data: d });
-      })
-      .catch((e) => {
-        if (alive) setState({ loading: false, error: String(e) });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [id, demo]);
-  return state;
+export function useCompetitorDetail(
+  id: string,
+  demo?: boolean,
+): Resource<CompetitorAnalysis> {
+  return useResource<CompetitorAnalysis>(
+    id
+      ? apiUrl(`/api/competitors/${encodeURIComponent(id)}`, { demo })
+      : null,
+  );
 }
 
 export function useInspirations() {
-  const [tick, setTick] = useState(0);
-  const [items, setItems] = useState<InspirationItem[]>([]);
-  useEffect(() => {
-    let alive = true;
-    fetch("/api/inspirations")
-      .then((r) => r.json())
-      .then((d) => {
-        if (alive) setItems(d.items ?? []);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [tick]);
-  return { items, reload: () => setTick((t) => t + 1) };
+  const r = useResource<{ items: InspirationItem[] }>("/api/inspirations");
+  return { items: r.data?.items ?? [], reload: r.reload };
 }
 
 export function useCompetitorOutliers(demo?: boolean, windowDays = 0) {
-  const [items, setItems] = useState<CompetitorOutlier[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasCredentials, setHasCredentials] = useState(true);
-  const [isDemo, setIsDemo] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    const p = new URLSearchParams();
-    if (demo) p.set("demo", "1");
-    if (windowDays) p.set("window", String(windowDays));
-    fetch("/api/competitors/outliers?" + p.toString())
-      .then((r) => r.json())
-      .then((d) => {
-        if (alive) {
-          setItems(d.items ?? []);
-          setHasCredentials(d.hasCredentials !== false);
-          setIsDemo(!!d.demo);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (alive) setLoading(false);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [demo, windowDays]);
-  return { items, loading, hasCredentials, isDemo };
+  const r = useResource<{
+    items?: CompetitorOutlier[];
+    hasCredentials?: boolean;
+    demo?: boolean;
+  }>(apiUrl("/api/competitors/outliers", { demo, window: windowDays || undefined }));
+  return {
+    items: r.data?.items ?? [],
+    loading: r.loading,
+    hasCredentials: r.data?.hasCredentials !== false,
+    isDemo: !!r.data?.demo,
+    reload: r.reload,
+  };
 }
 
 export async function postCompetitor(
@@ -192,225 +128,85 @@ export async function deleteInspiration(id: string) {
   });
 }
 
-export function useScan(kind: "niche" | "world", demo?: boolean) {
-  const [tick, setTick] = useState(0);
-  const [state, setState] = useState<AsyncState<ScanResult>>({ loading: true });
-  useEffect(() => {
-    let alive = true;
-    setState({ loading: true });
-    const p = new URLSearchParams();
-    p.set("kind", kind);
-    if (demo) p.set("demo", "1");
-    fetch("/api/scan?" + p.toString())
-      .then((r) => r.json())
-      .then((d: ScanResult) => {
-        if (alive) setState({ loading: false, data: d });
-      })
-      .catch((e) => {
-        if (alive) setState({ loading: false, error: String(e) });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [kind, demo, tick]);
-  return { ...state, reload: () => setTick((t) => t + 1) };
+// ───────────────────────── Scan / tendances / recherche ─────────────────────────
+
+export function useScan(
+  kind: "niche" | "world",
+  demo?: boolean,
+): Resource<ScanResult> {
+  return useResource<ScanResult>(apiUrl("/api/scan", { kind, demo }));
 }
 
-export function useTrends(demo?: boolean, region = "FR") {
-  const [state, setState] = useState<AsyncState<TrendsResult>>({
-    loading: true,
-  });
-  useEffect(() => {
-    let alive = true;
-    setState({ loading: true });
-    const p = new URLSearchParams();
-    if (demo) p.set("demo", "1");
-    p.set("region", region);
-    fetch("/api/trends?" + p.toString())
-      .then((r) => r.json())
-      .then((d: TrendsResult) => {
-        if (alive) setState({ loading: false, data: d });
-      })
-      .catch((e) => {
-        if (alive) setState({ loading: false, error: String(e) });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [demo, region]);
-  return state;
+export function useTrends(demo?: boolean, region = "FR"): Resource<TrendsResult> {
+  return useResource<TrendsResult>(apiUrl("/api/trends", { demo, region }));
 }
 
-export function useAlerts(demo?: boolean) {
-  const [state, setState] = useState<AsyncState<AlertsResult>>({ loading: true });
-  useEffect(() => {
-    let alive = true;
-    setState({ loading: true });
-    fetch("/api/alerts" + (demo ? "?demo=1" : ""))
-      .then((r) => r.json())
-      .then((d: AlertsResult) => {
-        if (alive) setState({ loading: false, data: d });
-      })
-      .catch((e) => {
-        if (alive) setState({ loading: false, error: String(e) });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [demo]);
-  return state;
+// ───────────────────────── Système / idées / audit / CTR ─────────────────────────
+
+export function useAlerts(demo?: boolean): Resource<AlertsResult> {
+  return useResource<AlertsResult>(apiUrl("/api/alerts", { demo }));
 }
 
-export function useDiagnostic() {
-  const [tick, setTick] = useState(0);
-  const [state, setState] = useState<AsyncState<DiagnosticResult>>({
-    loading: true,
-  });
-  useEffect(() => {
-    let alive = true;
-    setState({ loading: true });
-    fetch("/api/diagnostic")
-      .then((r) => r.json())
-      .then((d: DiagnosticResult) => {
-        if (alive) setState({ loading: false, data: d });
-      })
-      .catch((e) => {
-        if (alive) setState({ loading: false, error: String(e) });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [tick]);
-  return { ...state, reload: () => setTick((t) => t + 1) };
+export function useDiagnostic(): Resource<DiagnosticResult> {
+  return useResource<DiagnosticResult>("/api/diagnostic");
 }
 
-export function useHistory() {
-  const [state, setState] = useState<AsyncState<HistoryResult>>({
-    loading: true,
-  });
-  useEffect(() => {
-    let alive = true;
-    fetch("/api/history")
-      .then((r) => r.json())
-      .then((d: HistoryResult) => {
-        if (alive) setState({ loading: false, data: d });
-      })
-      .catch((e) => {
-        if (alive) setState({ loading: false, error: String(e) });
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
-  return state;
+export function useHistory(): Resource<HistoryResult> {
+  return useResource<HistoryResult>("/api/history");
 }
 
-export function useIdeas(demo?: boolean, daily?: boolean) {
-  const [state, setState] = useState<AsyncState<IdeasResult>>({ loading: true });
-  useEffect(() => {
-    let alive = true;
-    setState({ loading: true });
-    const p = new URLSearchParams();
-    if (demo) p.set("demo", "1");
-    if (daily) p.set("daily", "1");
-    fetch("/api/ideas?" + p.toString())
-      .then((r) => r.json())
-      .then((d: IdeasResult) => {
-        if (alive) setState({ loading: false, data: d });
-      })
-      .catch((e) => {
-        if (alive) setState({ loading: false, error: String(e) });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [demo, daily]);
-  return state;
+export function useIdeas(demo?: boolean, daily?: boolean): Resource<IdeasResult> {
+  return useResource<IdeasResult>(apiUrl("/api/ideas", { demo, daily }));
 }
 
 /** Modèles de titres appris de mes outliers + concurrents (/api/title-patterns). */
-export function useTitlePatterns(demo?: boolean) {
-  const [state, setState] = useState<AsyncState<TitlePatternsResult>>({
-    loading: true,
-  });
-  useEffect(() => {
-    let alive = true;
-    setState({ loading: true });
-    fetch("/api/title-patterns" + (demo ? "?demo=1" : ""))
-      .then((r) => r.json())
-      .then((d: TitlePatternsResult) => {
-        if (alive) setState({ loading: false, data: d });
-      })
-      .catch((e) => {
-        if (alive) setState({ loading: false, error: String(e) });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [demo]);
-  return state;
+export function useTitlePatterns(demo?: boolean): Resource<TitlePatternsResult> {
+  return useResource<TitlePatternsResult>(
+    apiUrl("/api/title-patterns", { demo }),
+  );
 }
 
-export function useAudit(demo?: boolean, channelId?: string) {
-  const [state, setState] = useState<AsyncState<AuditResult>>({ loading: true });
-  useEffect(() => {
-    let alive = true;
-    setState({ loading: true });
-    const p = new URLSearchParams();
-    if (demo) p.set("demo", "1");
-    if (channelId) p.set("channelId", channelId);
-    fetch("/api/audit?" + p.toString())
-      .then((r) => r.json())
-      .then((d: AuditResult) => {
-        if (alive) setState({ loading: false, data: d });
-      })
-      .catch((e) => {
-        if (alive) setState({ loading: false, error: String(e) });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [demo, channelId]);
-  return state;
+export function useAudit(
+  demo?: boolean,
+  channelId?: string,
+): Resource<AuditResult> {
+  return useResource<AuditResult>(apiUrl("/api/audit", { demo, channelId }));
 }
 
-export function useCtr(demo?: boolean, channelId?: string) {
-  const [state, setState] = useState<AsyncState<CtrReport>>({ loading: true });
-  useEffect(() => {
-    let alive = true;
-    setState({ loading: true });
-    const p = new URLSearchParams();
-    if (demo) p.set("demo", "1");
-    if (channelId) p.set("channelId", channelId);
-    fetch("/api/ctr?" + p.toString())
-      .then((r) => r.json())
-      .then((d: CtrReport) => {
-        if (alive) setState({ loading: false, data: d });
-      })
-      .catch((e) => {
-        if (alive) setState({ loading: false, error: String(e) });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [demo, channelId]);
-  return state;
+export function useCtr(demo?: boolean, channelId?: string): Resource<CtrReport> {
+  return useResource<CtrReport>(apiUrl("/api/ctr", { demo, channelId }));
 }
 
+/** Recherche à la demande. Garde les résultats précédents pendant une nouvelle
+ *  requête (audit UX F040) : plus de blackout entre deux recherches. */
 export function useSearch() {
-  const [state, setState] = useState<AsyncState<ScanResult>>({
-    loading: false,
-  });
+  const [url, setUrl] = useState<string | null>(null);
+  const r = useResource<ScanResult>(url);
+  // Dernier résultat abouti : reste affiché pendant la requête suivante (le SWR
+  // par-clé vide `r.data` au changement de requête, ce qui blankerait sinon).
+  const [lastData, setLastData] = useState<ScanResult | undefined>(undefined);
+  const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    if (r.data !== undefined) {
+      setLastData(r.data);
+      setPending(false);
+    } else if (r.error) {
+      setPending(false);
+    }
+  }, [r.data, r.error]);
+
   function run(q: string, demo?: boolean) {
     if (!q.trim() && !demo) return;
-    setState({ loading: true });
-    const p = new URLSearchParams();
-    p.set("q", q);
-    if (demo) p.set("demo", "1");
-    fetch("/api/search?" + p.toString())
-      .then((r) => r.json())
-      .then((d: ScanResult) => setState({ loading: false, data: d }))
-      .catch((e) => setState({ loading: false, error: String(e) }));
+    setPending(true);
+    setUrl(apiUrl("/api/search", { q, demo }));
   }
-  return { ...state, run };
+
+  return {
+    data: r.data ?? lastData,
+    error: r.error,
+    loading: pending && lastData === undefined,
+    searching: pending,
+    run,
+  };
 }

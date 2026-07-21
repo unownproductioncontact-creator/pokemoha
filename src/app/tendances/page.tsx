@@ -19,7 +19,7 @@ export default function TendancesPage() {
     if (new URLSearchParams(window.location.search).get("demo") === "1")
       setDemo(true);
   }, []);
-  const { loading, data } = useTrends(demo);
+  const { loading, data, reload } = useTrends(demo);
 
   const header = (
     <PageHeader
@@ -40,7 +40,7 @@ export default function TendancesPage() {
     return (
       <>
         {header}
-        <ErrorBlock />
+        <ErrorBlock onRetry={reload} />
       </>
     );
   if (data.status === "no-credentials")
@@ -54,7 +54,7 @@ export default function TendancesPage() {
     return (
       <>
         {header}
-        <ErrorBlock message={data.message} />
+        <ErrorBlock message={data.message} onRetry={reload} />
       </>
     );
 

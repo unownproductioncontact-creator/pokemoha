@@ -22,7 +22,7 @@ export default function DashboardPage() {
     if (new URLSearchParams(window.location.search).get("demo") === "1")
       setDemo(true);
   }, []);
-  const { loading, data } = useChannelAnalysis({ demo });
+  const { loading, data, reload } = useChannelAnalysis({ demo });
 
   if (loading)
     return (
@@ -35,7 +35,7 @@ export default function DashboardPage() {
     return (
       <>
         <PageHeader title="Dashboard" subtitle={SUBTITLE} />
-        <ErrorBlock />
+        <ErrorBlock onRetry={reload} />
       </>
     );
   if (data.status === "no-credentials" || data.status === "unconfigured")
@@ -49,7 +49,7 @@ export default function DashboardPage() {
     return (
       <>
         <PageHeader title="Dashboard" subtitle={SUBTITLE} />
-        <ErrorBlock message={data.message} />
+        <ErrorBlock message={data.message} onRetry={reload} />
       </>
     );
 
