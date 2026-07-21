@@ -131,6 +131,27 @@ export default function ParametresPage() {
             </p>
           )}
         </Card>
+
+        <Card className="p-4 sm:col-span-2">
+          <h2 className="mb-1 font-semibold">Système</h2>
+          <p className="mb-2 text-sm text-muted">
+            Outils techniques — sortis de la navigation principale pour l&apos;alléger.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="/diagnostic"
+              className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium hover:bg-elevated"
+            >
+              Diagnostic (clés, quota, cache) →
+            </a>
+            <a
+              href="/historique"
+              className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium hover:bg-elevated"
+            >
+              Historique du cache →
+            </a>
+          </div>
+        </Card>
       </div>
     </>
   );

@@ -6,13 +6,18 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { NAV } from "@/config/nav";
 import { MY_CHANNELS } from "@/config/channels";
+import { segmentGroupFor } from "@/config/segments";
 import { ICONS } from "@/components/icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SegmentNav } from "@/components/SegmentNav";
 import { cn } from "@/lib/cn";
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(href + "/");
+  if (pathname === href || pathname.startsWith(href + "/")) return true;
+  // Un hub reste actif sur N'IMPORTE quel segment de son groupe (F001).
+  const g = segmentGroupFor(href);
+  return g !== undefined && g === segmentGroupFor(pathname);
 }
 
 /** Bloc chaîne (audit UX F002) : bloc d'état NON cliquable (le sélecteur était un
@@ -190,6 +195,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
 
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          {/* Barre de segments du hub (rendue seulement sur les pages d'un hub). */}
+          <SegmentNav />
           {children}
         </main>
       </div>
