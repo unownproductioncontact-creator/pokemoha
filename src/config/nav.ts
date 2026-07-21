@@ -19,7 +19,7 @@ export const NAV: NavGroup[] = [
     items: [
       // Libellés : le mot de PORTÉE d'abord (mes vidéos / ma niche / monde /
       // concurrents) — audit UX F001, l'utilisateur ne doit plus interpréter.
-      { href: "/", label: "Dashboard", icon: "grid" },
+      { href: "/", label: "Aujourd'hui", icon: "grid" },
       { href: "/alertes", label: "Alertes", icon: "bell" },
       { href: "/outliers", label: "Mes outliers", icon: "flame" },
       { href: "/outliers-youtube", label: "Outliers de ma niche", icon: "youtube" },

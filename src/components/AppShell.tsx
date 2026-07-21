@@ -15,86 +15,28 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-function ChannelSwitcher() {
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState(
-    MY_CHANNELS[0]?.label ?? "Aucune chaîne",
-  );
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("kiibiki-channel");
-      if (saved) setSelected(saved);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  function pick(label: string) {
-    setSelected(label);
-    setOpen(false);
-    try {
-      localStorage.setItem("kiibiki-channel", label);
-    } catch {
-      /* ignore */
-    }
-  }
-
-  const Chevron = ICONS.chevron;
+/** Bloc chaîne (audit UX F002) : bloc d'état NON cliquable (le sélecteur était un
+ *  faux affordance — une seule chaîne, choix sans effet) + l'action RÉELLE de
+ *  connexion. Aucun état de connexion n'est affirmé ici faute de le vérifier (§0). */
+function ChannelBlock() {
+  const ch = MY_CHANNELS[0];
   const Plug = ICONS.plug;
-
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-line bg-elevated px-3 py-2 text-sm font-medium transition-colors hover:border-brand/40"
-      >
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-brand/15 text-[11px] font-bold text-brand">
-            {selected.slice(0, 2).toUpperCase()}
-          </span>
-          <span className="truncate">{selected}</span>
+    <div className="rounded-lg border border-line bg-elevated px-3 py-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-brand/15 text-[11px] font-bold text-brand">
+          {(ch?.label ?? "?").slice(0, 2).toUpperCase()}
         </span>
-        <Chevron
-          className={cn(
-            "h-4 w-4 shrink-0 text-muted transition-transform",
-            open && "rotate-180",
-          )}
-        />
-      </button>
-      {open && (
-        <>
-          <div
-            className="fixed inset-0 z-20"
-            onClick={() => setOpen(false)}
-            aria-hidden
-          />
-          <div className="absolute z-30 mt-1 w-full overflow-hidden rounded-lg border border-line bg-surface shadow-lg">
-            {MY_CHANNELS.map((c) => (
-              <button
-                key={c.ref}
-                type="button"
-                onClick={() => pick(c.label)}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-elevated"
-              >
-                <span className="truncate">{c.label}</span>
-                {c.placeholder && (
-                  <span className="ml-auto shrink-0 text-[10px] text-muted">
-                    à connecter
-                  </span>
-                )}
-              </button>
-            ))}
-            <a
-              href="/api/oauth/start"
-              className="flex items-center gap-2 border-t border-line px-3 py-2 text-sm text-brand hover:bg-elevated"
-            >
-              <Plug className="h-4 w-4" /> Connecter une chaîne
-            </a>
-          </div>
-        </>
-      )}
+        <span className="truncate text-sm font-medium">
+          {ch?.label ?? "Aucune chaîne"}
+        </span>
+      </div>
+      <a
+        href="/api/oauth/start"
+        className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
+      >
+        <Plug className="h-3.5 w-3.5" /> Connecter ma chaîne
+      </a>
     </div>
   );
 }
@@ -122,7 +64,7 @@ function SidebarContent({
       </div>
 
       <div className="px-3 pb-3">
-        <ChannelSwitcher />
+        <ChannelBlock />
       </div>
 
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">

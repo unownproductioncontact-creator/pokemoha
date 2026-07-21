@@ -12,6 +12,10 @@ export interface Alert {
   detail: string;
   href?: string;
   ageDays?: number;
+  /** Sujet propre (titre de la vidéo) → alimente les CTA internes (F015). */
+  subject?: string;
+  /** Id vidéo → CTA « Analyser la miniature ». */
+  videoId?: string;
 }
 
 const SEV_RANK: Record<Alert["severity"], number> = {
@@ -44,6 +48,8 @@ export function buildAlerts(input: {
         detail: `Projeté à ${r1(s.projectedRatio)}× la médiane (actuel ${r1(s.ratio)}×, ${Math.round(s.ageDays)} j). Pousse-la (commentaire épinglé, Short teaser).`,
         href: watchUrl(s.video.id),
         ageDays: s.ageDays,
+        subject: s.video.title,
+        videoId: s.video.id,
       });
     } else if (s.flag === "outlier" && s.ratio >= 3 && s.ageDays <= 21) {
       alerts.push({
@@ -54,6 +60,8 @@ export function buildAlerts(input: {
         detail: `${r1(s.ratio)}× ta médiane — rejoue cet angle / décline-le en Short.`,
         href: watchUrl(s.video.id),
         ageDays: s.ageDays,
+        subject: s.video.title,
+        videoId: s.video.id,
       });
     } else if (s.flag === "under" && s.ageDays <= 30) {
       alerts.push({
@@ -64,6 +72,8 @@ export function buildAlerts(input: {
         detail: `${r1(s.ratio)}× ta médiane — analyse le hook (onglet Hooks) et la miniature.`,
         href: watchUrl(s.video.id),
         ageDays: s.ageDays,
+        subject: s.video.title,
+        videoId: s.video.id,
       });
     }
   }
@@ -78,6 +88,8 @@ export function buildAlerts(input: {
         detail: `${r1(o.sv.ratio)}× sa médiane, il y a ${Math.round(o.sv.ageDays)} j — concept à surveiller / adapter en FR.`,
         href: watchUrl(o.sv.video.id),
         ageDays: o.sv.ageDays,
+        subject: o.sv.video.title,
+        videoId: o.sv.video.id,
       });
     }
   }

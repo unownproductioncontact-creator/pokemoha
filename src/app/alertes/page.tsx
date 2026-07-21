@@ -92,16 +92,35 @@ export default function AlertesPage() {
                 </Badge>
               </div>
               <p className="mt-1 text-xs text-muted">{a.detail}</p>
-              {a.href && (
-                <a
-                  href={a.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 inline-block text-xs font-medium text-brand hover:underline"
-                >
-                  Voir la vidéo →
-                </a>
-              )}
+              {/* CTA internes (F015) : agir sans quitter l'app ni ressaisir. */}
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                {a.subject && (
+                  <a
+                    href={`/generateur-titres?idee=${encodeURIComponent(a.subject)}${demo ? "&demo=1" : ""}`}
+                    className="text-xs font-medium text-brand hover:underline"
+                  >
+                    Générer des titres →
+                  </a>
+                )}
+                {a.videoId && (
+                  <a
+                    href={`/miniatures?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${a.videoId}`)}${demo ? "&demo=1" : ""}`}
+                    className="text-xs font-medium text-brand hover:underline"
+                  >
+                    Analyser la miniature →
+                  </a>
+                )}
+                {a.href && (
+                  <a
+                    href={a.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted hover:text-ink hover:underline"
+                  >
+                    Voir sur YouTube ↗
+                  </a>
+                )}
+              </div>
             </div>
           ))}
         </div>
