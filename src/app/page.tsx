@@ -131,6 +131,11 @@ export default function AujourdhuiPage() {
         </div>
         {alerts.loading ? (
           <Card className="p-4 text-sm text-muted">Chargement des alertes…</Card>
+        ) : alerts.data?.status !== "ok" ? (
+          // Ne JAMAIS affirmer « rien d'urgent » si le chargement a échoué (§0).
+          <Card className="p-4 text-sm text-muted">
+            Alertes indisponibles pour l&apos;instant.
+          </Card>
         ) : topAlerts.length === 0 ? (
           <Card className="p-4 text-sm text-muted">
             Rien d&apos;urgent — aucune alerte à traiter aujourd&apos;hui. 🎉
@@ -190,6 +195,10 @@ export default function AujourdhuiPage() {
         </div>
         {ideas.loading ? (
           <Card className="p-4 text-sm text-muted">Synthèse des idées…</Card>
+        ) : ideas.data?.status !== "ok" ? (
+          <Card className="p-4 text-sm text-muted">
+            Idées indisponibles pour l&apos;instant.
+          </Card>
         ) : topIdeas.length === 0 ? (
           <Card className="p-4 text-sm text-muted">
             Pas encore d&apos;idées — suis des concurrents pour nourrir le moteur.
