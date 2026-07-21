@@ -3,10 +3,12 @@
 // Sinon : Basic Auth (boîte de dialogue du navigateur) → cookie de session
 // signé HMAC avec expiration VÉRIFIÉE côté serveur (60 j, non glissante),
 // comparaison à temps constant, verrou anti-bruteforce 10 essais / 15 min.
-// Next 16 : ce fichier remplace middleware.ts et tourne en runtime Node.js.
+//
+// Crypto via Web Crypto (crypto.subtle) — disponible EN NODE COMME EN EDGE, donc
+// portable sur tout hébergeur (Render/Node, Vercel Edge ou Node, Cloudflare…).
+// Le proxy est asynchrone (Web Crypto l'est).
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 const COOKIE = 'pkm_auth';
 const SESSION_MAX_AGE_S = 60 * 24 * 3600; // 60 jours, fixe (vérifié côté serveur)
@@ -14,13 +16,31 @@ const AUTH_MAX_FAILS = 10;
 const AUTH_LOCK_MS = 15 * 60_000;
 
 const authFails = new Map<string, { count: number; until: number }>();
+const TE = new TextEncoder();
 
-function sha(s: string): Buffer {
-  return createHash('sha256').update(s).digest();
+function toHex(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
-/** Comparaison du mot de passe saisi (Basic Auth) à temps constant. */
-function safeEqual(a: string, b: string): boolean {
-  return timingSafeEqual(sha(a), sha(b));
+
+/** Comparaison à temps constant de deux chaînes de MÊME longueur. */
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+async function sha256Hex(s: string): Promise<string> {
+  return toHex(await crypto.subtle.digest('SHA-256', TE.encode(s)));
+}
+
+/** Compare le mot de passe saisi au mot de passe attendu à temps constant
+ *  (on compare les empreintes SHA-256 pour ne pas fuiter la longueur). */
+async function safeEqualPw(given: string, expected: string): Promise<boolean> {
+  const [ga, gb] = await Promise.all([sha256Hex(given), sha256Hex(expected)]);
+  return constantTimeEqual(ga, gb);
 }
 
 /**
@@ -34,19 +54,29 @@ function sessionSecret(pw: string): string {
   return process.env.SESSION_SECRET || `pokemoha-fallback|${pw}`;
 }
 
-function sign(secret: string, payload: string): string {
-  return createHmac('sha256', secret).update(payload).digest('hex');
+async function hmacHex(secret: string, payload: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    TE.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  return toHex(await crypto.subtle.sign('HMAC', key, TE.encode(payload)));
 }
 
 /** Cookie = "<issuedAt>.<signature>" — l'expiration est recalculée à CHAQUE
  *  requête à partir de issuedAt, indépendamment du maxAge (côté client) du
  *  cookie. Session non glissante : expire réellement 60 j après connexion. */
-function makeSessionCookie(pw: string): string {
+async function makeSessionCookie(pw: string): Promise<string> {
   const issuedAt = Date.now();
-  return `${issuedAt}.${sign(sessionSecret(pw), String(issuedAt))}`;
+  return `${issuedAt}.${await hmacHex(sessionSecret(pw), String(issuedAt))}`;
 }
 
-function verifySessionCookie(pw: string, cookie: string | undefined): boolean {
+async function verifySessionCookie(
+  pw: string,
+  cookie: string | undefined,
+): Promise<boolean> {
   if (!cookie) return false;
   const dot = cookie.indexOf('.');
   if (dot < 0) return false;
@@ -55,23 +85,16 @@ function verifySessionCookie(pw: string, cookie: string | undefined): boolean {
   const issuedAt = Number(issuedAtStr);
   if (!Number.isFinite(issuedAt) || issuedAt <= 0) return false;
   if (Date.now() - issuedAt > SESSION_MAX_AGE_S * 1000) return false; // expiration serveur
-  const expected = sign(sessionSecret(pw), issuedAtStr);
-  try {
-    return (
-      sig.length === expected.length &&
-      timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'))
-    );
-  } catch {
-    return false;
-  }
+  const expected = await hmacHex(sessionSecret(pw), issuedAtStr);
+  return constantTimeEqual(sig, expected);
 }
 
-export default function proxy(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
   const pw = process.env.DASHBOARD_PASSWORD ?? '';
   if (!pw) {
     // En hébergement, un mot de passe manquant NE DOIT PAS rendre l'app
-    // publique par défaut (oubli de variable d'env sur Render) : on bloque
-    // plutôt que de fail-open. En local (`next dev`), rien ne change.
+    // publique par défaut (oubli de variable d'env) : on bloque plutôt que de
+    // fail-open. En local (`next dev`), rien ne change.
     if (process.env.NODE_ENV === 'production') {
       return new NextResponse(
         "DASHBOARD_PASSWORD manquant : configure cette variable dans les paramètres de ton hébergeur pour activer l'accès.",
@@ -82,7 +105,7 @@ export default function proxy(req: NextRequest) {
   }
 
   // 1) Cookie de session valide (signature + expiration vérifiées côté serveur).
-  if (verifySessionCookie(pw, req.cookies.get(COOKIE)?.value)) {
+  if (await verifySessionCookie(pw, req.cookies.get(COOKIE)?.value)) {
     return NextResponse.next();
   }
 
@@ -101,15 +124,16 @@ export default function proxy(req: NextRequest) {
   if (hdr.startsWith('Basic ')) {
     let given = '';
     try {
-      const decoded = Buffer.from(hdr.slice(6), 'base64').toString('utf8');
+      // atob() est dispo en Node comme en Edge (pas de Buffer, non portable Edge).
+      const decoded = atob(hdr.slice(6));
       given = decoded.slice(decoded.indexOf(':') + 1);
     } catch {
       /* en-tête illisible → traité comme échec */
     }
-    if (given && safeEqual(given, pw)) {
+    if (given && (await safeEqualPw(given, pw))) {
       authFails.delete(ip);
       const res = NextResponse.next();
-      res.cookies.set(COOKIE, makeSessionCookie(pw), {
+      res.cookies.set(COOKIE, await makeSessionCookie(pw), {
         httpOnly: true,
         sameSite: 'lax',
         secure: req.nextUrl.protocol === 'https:',

@@ -16,10 +16,19 @@
 
 import { createHash } from 'node:crypto';
 import { promises as fs } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { neon } from '@neondatabase/serverless';
 
-const DIR = path.join(process.cwd(), '.cache');
+// Répertoire du backend fichiers. Sur les plateformes serverless au disque en
+// lecture seule (Vercel, etc.), `process.cwd()` n'est pas inscriptible → repli
+// sur le seul dossier écrivable (`/tmp`, éphémère). NB : la vraie persistance y
+// passe de toute façon par Neon (DATABASE_URL requis) ; ce repli évite juste que
+// la couche cache plante si Neon n'est pas configuré.
+const DIR =
+  process.env.VERCEL || process.env.NETLIFY
+    ? path.join(os.tmpdir(), 'pokemoha-cache')
+    : path.join(process.cwd(), '.cache');
 const NEON_TIMEOUT_MS = 8000;
 
 export function pgConfigured(): boolean {
